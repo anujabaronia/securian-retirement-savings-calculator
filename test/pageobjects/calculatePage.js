@@ -1,5 +1,5 @@
-import { browser } from '@wdio/globals'
-import xlsx from 'xlsx';
+import utils from '../utils/utils';
+import logger from '../utils/logger';
 
 class calculatePage {
 
@@ -30,205 +30,247 @@ class calculatePage {
     get invalidCurrentTotalSaving() { return $('//*[@id="invalid-current-total-savings-error"]') };
     get invalidCurrentAnnualSaving() { return $('//*[@id="invalid-current-annual-savings-error"]') };
     get invalidSavingIncRate() { return $('//*[@id="invalid-savings-increase-rate-error"]') };
-    get clearFormButton() { return $('//*[@onclick="clearRetirementForm();"]') };    
+    get clearFormButton() { return $('//*[@onclick="clearRetirementForm();"]') };
 
 
-    getTestData(testCaseName, sheetName) {
-        const workbook = xlsx.readFile('./test/data/testData.xlsx');
-        if (!workbook.Sheets[sheetName]) {
-            throw new Error(`Sheet "${sheetName}" not found in the Excel file.`);
+
+
+    /* Filling the details */
+    async fillRequiredDetails(testCaseName, sheetName) {
+        try {
+            await this.fillAgeDetails(testCaseName, sheetName);
+            await this.fillIncomeDetails(testCaseName, sheetName);
+            await this.fillSocialSecurityDetails(testCaseName, sheetName);
         }
-        const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-        const testData = sheetData.find(row => row.testCaseName === testCaseName);
-
-        return testData;
+        catch (error) {
+            logger.error("Error filling required details:", error);
+            throw error;
+        }
     }
 
+    /*Fill the age details*/
     async fillAgeDetails(testCaseName, sheetName) {
-        const data = this.getTestData(testCaseName, sheetName);
-        await this.currentAge.click();
-        await this.currentAge.setValue(data.currentAge);
-        console.log('Current Age:', data.currentAge);
-
-        await this.retirementAge.click();
-        await this.retirementAge.setValue(data.retirementAge);
-        console.log('Retirement Age:', data.retirementAge);
-
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.elementAction(this.currentAge, 'setValue', data.currentAge, 'Current Age');
+        await utils.elementAction(this.retirementAge, 'setValue', data.retirementAge, 'Retirement Age');
     }
 
+    /*Fill Income/Savings Details*/
     async fillIncomeDetails(testCaseName, sheetName) {
-        const data = this.getTestData(testCaseName, sheetName);
-        await this.annualIncome.click();
-        await this.annualIncome.setValue(data.annualIncome);
-        console.log('Annual Income:', data.annualIncome);
-
-        await this.spouseIncome.click();
-        await this.spouseIncome.setValue(data.spouseIncome);
-        console.log('spouse-income:', data.spouseIncome);
-
-        await this.currentTotalSavings.click();
-        await this.currentTotalSavings.setValue(data.currentTotalSavings);
-        console.log('current-total-savings:', data.currentTotalSavings);
-
-        await this.currentAnnualSavings.click();
-        await this.currentAnnualSavings.setValue(data.currentAnnualSavings);
-        console.log('current-annual-savings:', data.currentAnnualSavings);
-
-        await this.savingsIncreaseRate.click();
-        await this.savingsIncreaseRate.setValue(data.savingsIncreaseRate);
-        console.log('savings-increase-rate:', data.savingsIncreaseRate);        
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.elementAction(this.annualIncome, 'setValue', data.annualIncome, 'Current Annual Income');
+        await utils.elementAction(this.spouseIncome, 'setValue', data.spouseIncome, 'Spouse Annual Income');
+        await utils.elementAction(this.currentTotalSavings, 'setValue', data.currentTotalSavings, 'Current Retirement Savings');
+        await utils.elementAction(this.currentAnnualSavings, 'setValue', data.currentAnnualSavings, 'Current Annual Savings');
+        await utils.elementAction(this.savingsIncreaseRate, 'setValue', data.savingsIncreaseRate, 'Current Annual Rate of increase in savings');
     }
 
+    /*Fill Social Security Income Details*/
     async fillSocialSecurityDetails(testCaseName, sheetName) {
-        const data = this.getTestData(testCaseName, sheetName);
+        const data = await utils.getTestData(testCaseName, sheetName);
 
         if (data.includeSocialSecurity === 'No') {
 
-            await this.noIncludeSocialSecurity.click();
-            console.log('IncludeSocialSecurity:', data.includeSocialSecurity);
+            await utils.elementAction(this.noIncludeSocialSecurity, 'click', null, 'Social Security Benefits Selection');
         }
         else {
-            await this.yesIncludeSocialSecurity.click();
-            console.log('IncludeSocialSecurity:', data.includeSocialSecurity);
-            await this.maritalStatusFields.waitForDisplayed({ timeout: 10000 });
+            await utils.elementAction(this.yesIncludeSocialSecurity, 'click', null, `Social Security Benefits Selection as ` + data.includeSocialSecurity);
+            await utils.elementAction(this.maritalStatusFields, 'isDisplayed', null, 'Marital Status Fields');
             if (data.maritalStatus === 'Married') {
-                await this.maritalStatusMarried.click();
+                await utils.elementAction(this.maritalStatusMarried, 'click', null, 'Marital Status as ' + data.maritalStatus);
             }
             else {
-                await this.maritalStatusSingle.click();
+                await utils.elementAction(this.maritalStatusSingle, 'click', null, 'Marital Status as ' + data.maritalStatus);
             }
-            console.log('Marital Status:', data.maritalStatus);
-
-            await this.socialSecurityOverrideAmt.click();
-            await this.socialSecurityOverrideAmt.setValue(data.socialSecurityOverrideAmt);
-            console.log('Social Security Override Amount:', data.socialSecurityOverrideAmt);
+            await utils.elementAction(this.socialSecurityOverrideAmt, 'setValue', data.socialSecurityOverrideAmt, 'Social Security override amount');
         }
 
     }
+
+    /* Clicking the buttons */
     async clickButton(button) {
-        switch (button) {
-            case 'Calculate':
-                await this.calculateButton.click();
-                console.log('Clicked on Calculate Button');
-                break;
-            case 'Clear-Form':
-                await this.clearFormButton.click();
-                console.log('Clicked on Clear Form Button');
-                break;           
-            default:
-                throw new Error(`Button "${button}" not recognized`);
+        try {
+            switch (button) {
+                case 'Calculate':
+                    await this.calculateButton.click();
+                    logger.info('Clicked on Calculate Button');
+                    break;
+                case 'Clear-Form':
+                    await this.clearFormButton.click();
+                    logger.info('Clicked on Clear Form Button');
+                    break;
+                default:
+                    throw new Error(`Button "${button}" not recognized`);
+            }
+        } catch (error) {
+            logger.error("Error clicking button:", error);
+            throw error;
+
         }
     }
+
+    /* Validate the result section */
     async validateResultSection() {
-        await browser.pause(5000);
-        const displayValue = await this.resultSection.getCSSProperty('display');
-        if (displayValue.value === 'none') {
-            console.log('Result Section is not displayed');
-            throw new Error('Result Section is not displayed');
-        } else {
-            const isResultSectionDisplayed = await this.resultSection.isDisplayed();
-            console.log('Result Section is displayed:', isResultSectionDisplayed);
+        try {
+            await this.resultSection.waitForDisplayed({ timeout: 10000 });
+            const displayValue = await this.resultSection.getCSSProperty('display');
+            if (displayValue.value === 'none') {
+                logger.info('Result Section is not displayed');
+                throw new Error('Result Section is not displayed');
+            } else {
+                await utils.elementAction(this.resultSection, 'isDisplayed', null, 'Result Section');
+                await utils.elementAction(this.resultMessage, 'isDisplayed', null, 'Result Message');
+                await utils.elementAction(this.resultChart, 'isDisplayed', null, 'Result Chart');
+                await utils.elementAction(this.resultTable, 'isDisplayed', null, 'Result Table');
+                await utils.elementAction(this.emailResultBtn, 'isClickable', null, 'Email Result Button');
+                await utils.elementAction(this.editInfoButton, 'isClickable', null, 'Edit Info Button');
+                await utils.elementAction(this.fullResultsButton, 'isClickable', null, 'Full Results Button');
+            }
+        } catch (error) {
+            logger.error("Error validating result section:", error);
+            throw error;
 
-            const isResultMessageDisplayed = await this.resultMessage.isDisplayed();
-            console.log('Result Message is displayed:', isResultMessageDisplayed);
-
-            const isResultChartDisplayed = await this.resultChart.isDisplayed();
-            console.log('Result Chart is displayed:', isResultChartDisplayed);
-
-            const isResultTableDisplayed = await this.resultTable.isDisplayed();
-            console.log('Result Table is displayed:', isResultTableDisplayed);
-
-            const isEmailResultBtnClickable = await this.emailResultBtn.isClickable();
-            console.log('Email Result Button is clickable:', isEmailResultBtnClickable);
-
-            const isEditInfoButtonClickable = await this.editInfoButton.isClickable();
-            console.log('Edit Info Button is clickable:', isEditInfoButtonClickable);
-
-            const isFullResultsButtonClickable = await this.fullResultsButton.isClickable();
-            console.log('Full Results Button is clickable:', isFullResultsButtonClickable);
         }
     }
+
+    /* Validate the error messages in negative testing*/
     async validateErrorMessages(testCaseName, sheetName) {
-        switch (testCaseName) {
-            case 'noCurrentAge':
-                await this.validateInvalidCurrentAge(testCaseName, sheetName);
-                break;
-            case 'noRetirementAge':
-                await this.validateInvalidRetirementAge(testCaseName, sheetName);
-                break;
-            case 'noCurrentIncome':
-                await this.validateInvalidCurrentIncome(testCaseName, sheetName);
-                break;
-            case 'noCurrentTotalSavings':
-                await this.validateInvalidCurrentTotalSavings(testCaseName, sheetName);
-                break;
-            case 'noCurrentAnnualSavings':
-                await this.validateInvalidCurrentAnnualSavings(testCaseName, sheetName);
-                break;
-            case 'noSavingsIncreaseRate':
-                await this.validateInvalidSavingsIncreaseRate(testCaseName, sheetName);
-                break;
-            case 'currAgeGrtThanRetAge':
-                await this.validateInvalidRetirementAge(testCaseName, sheetName);
-                break;
-            case 'currentAgeMaxVal':
-                await this.validateInvalidCurrentAge(testCaseName, sheetName);
-                break;
-            case 'retirementAgeMaxVal':
-                await this.validateInvalidRetirementAge(testCaseName, sheetName);
-                break;
-            default:
-                throw new Error('Invalid Test Case Name: ', testCaseName);
+        try {
+            switch (testCaseName) {
+                case 'noCurrentAge':
+                    await this.validateInvalidCurrentAge(testCaseName, sheetName);
+                    break;
+                case 'noRetirementAge':
+                    await this.validateInvalidRetirementAge(testCaseName, sheetName);
+                    break;
+                case 'noCurrentIncome':
+                    await this.validateInvalidCurrentIncome(testCaseName, sheetName);
+                    break;
+                case 'noCurrentTotalSavings':
+                    await this.validateInvalidCurrentTotalSavings(testCaseName, sheetName);
+                    break;
+                case 'noCurrentAnnualSavings':
+                    await this.validateInvalidCurrentAnnualSavings(testCaseName, sheetName);
+                    break;
+                case 'noSavingsIncreaseRate':
+                    await this.validateInvalidSavingsIncreaseRate(testCaseName, sheetName);
+                    break;
+                case 'currAgeGrtThanRetAge':
+                    await this.validateInvalidRetirementAge(testCaseName, sheetName);
+                    break;
+                case 'currentAgeMaxVal':
+                    await this.validateInvalidCurrentAge(testCaseName, sheetName);
+                    break;
+                case 'retirementAgeMaxVal':
+                    await this.validateInvalidRetirementAge(testCaseName, sheetName);
+                    break;
+                default:
+                    throw new Error('Invalid Test Case Name: ', testCaseName);
+            }
+        } catch (error) {
+            logger.error("Error validating error messages:", error);
+            throw error;
+
         }
-
     }
 
+    /* Validate the error messages for current age */
     async validateInvalidCurrentAge(testCaseName, sheetName) {
-        await this.invalidCurrentAge.isDisplayed();
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidCurrentAge).toHaveText(data.errorMessage);
-        console.log('Invalid Current Age error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidCurrentAge, data.errorMessage, 'Current Age');
     }
+
+    /* Validate the error messages for retirement age */
     async validateInvalidRetirementAge(testCaseName, sheetName) {
-        await this.invalidRetirementAge.isDisplayed();
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidRetirementAge).toHaveText(data.errorMessage);
-        console.log('Invalid Retirement Age error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidRetirementAge, data.errorMessage, 'Retirement Age');
     }
+
+    /* Validate the error messages for current income */
     async validateInvalidCurrentIncome(testCaseName, sheetName) {
-        await this.invalidCurrentIncome.isDisplayed();
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidCurrentIncome).toHaveText(data.errorMessage);
-        console.log('Invalid Current Income error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidCurrentIncome, data.errorMessage, 'Current Income');
     }
+
+    /* Validate the error messages for current total savings */
     async validateInvalidCurrentTotalSavings(testCaseName, sheetName) {
-        await this.invalidCurrentTotalSaving.waitForDisplayed({ timeout: 10000 });
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidCurrentTotalSaving).toHaveText(data.errorMessage);
-        console.log('Invalid Current Total Savings error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidCurrentTotalSaving, data.errorMessage, 'Current Total Savings');
     }
+
+    /* Validate the error messages for current annual savings */
     async validateInvalidCurrentAnnualSavings(testCaseName, sheetName) {
-        await this.invalidCurrentAnnualSaving.isDisplayed();
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidCurrentAnnualSaving).toHaveText(data.errorMessage);
-        console.log('Invalid Current Annual Savings error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidCurrentAnnualSaving, data.errorMessage, 'Current Annual Savings');
     }
+
+    /* Validate the error messages for savings increase rate */
     async validateInvalidSavingsIncreaseRate(testCaseName, sheetName) {
-        await this.invalidSavingIncRate.isDisplayed();
-        const data = this.getTestData(testCaseName, sheetName);
-        expect(await this.invalidSavingIncRate).toHaveText(data.errorMessage);
-        console.log('Invalid Savings Increase Rate error message is displayed: ' + data.errorMessage);
+        const data = await utils.getTestData(testCaseName, sheetName);
+        await utils.validateErrorMessage(this.invalidSavingIncRate, data.errorMessage, 'Savings Increase Rate');
     }
-    async validateFormCleared() {       
-        expect(await this.currentAge).toHaveValue('');
-        expect(await this.retirementAge).toHaveValue('');
-        expect(await this.annualIncome).toHaveValue('');
-        expect(await this.spouseIncome).toHaveValue('');
-        expect(await this.currentTotalSavings).toHaveValue('');
-        expect(await this.currentAnnualSavings).toHaveValue('');
-        expect(await this.savingsIncreaseRate).toHaveValue('');
-        expect(await this.noIncludeSocialSecurity).toBeSelected();
-        console.log('All fields are cleared');
+
+    /* Validate the social security details */
+    async validateSocialSecurityDetails(testCaseName, sheetName) {
+        try {
+            const data = await utils.getTestData(testCaseName, sheetName);
+            if (data.includeSocialSecurity === 'No') {
+                await utils.assertElementsAreSelected([
+                    { element: this.noIncludeSocialSecurity, shouldBeSelected: true, elementName: 'socialSecurityBenefits' }
+                ]);
+                logger.info('Social Security Benefits is not included');
+            }
+            else {
+                await utils.assertElementsAreSelected([
+                    { element: this.yesIncludeSocialSecurity, shouldBeSelected: true, elementName: 'socialSecurityBenefits' }
+                ]);
+                logger.info('Social Security Benefits is included');
+                await utils.elementAction(this.maritalStatusFields, 'isDisplayed', null, 'Marital Status Fields');
+                if (data.maritalStatus === 'Married') {
+                    await utils.assertElementsAreSelected([
+                        { element: this.maritalStatusMarried, shouldBeSelected: true, elementName: 'maritalStatus' }
+                    ]);
+                    logger.info('Marital Status: Married');
+                }
+                else {
+                    await utils.assertElementsAreSelected([
+                        { element: this.maritalStatusSingle, shouldBeSelected: true, elementName: 'maritalStatus' }
+                    ]);
+                    logger.info('Marital Status: Single');
+                }
+                await utils.assertElementsHaveValues([
+                    { element: this.socialSecurityOverrideAmt, expectedValue: data.socialSecurityOverrideAmt, elementName: 'socialSecurityOverrideAmt' }
+                ]);
+                logger.info('Social Security Override Amount:', data.socialSecurityOverrideAmt);
+            }
+        } catch (error) {
+            logger.error("Error validating social security details:", error);
+            throw error;
+        }
+    }
+
+    /* Validate the form is cleared */
+    async validateFormCleared() {
+        try {
+            await browser.pause(5000);
+            await utils.assertElementsHaveValues([
+                { element: this.currentAge, expectedValue: '', elementName: 'currentAge' },
+                { element: this.retirementAge, expectedValue: '', elementName: 'retirementAge' },
+                { element: this.annualIncome, expectedValue: '', elementName: 'annualIncome' },
+                { element: this.spouseIncome, expectedValue: '', elementName: 'spouseIncome' },
+                { element: this.currentTotalSavings, expectedValue: '', elementName: 'currentTotalSavings' },
+                { element: this.currentAnnualSavings, expectedValue: '', elementName: 'currentAnnualSavings' },
+                { element: this.savingsIncreaseRate, expectedValue: '', elementName: 'savingsIncreaseRate' },
+            ]);
+            await utils.assertElementsAreSelected([
+                { element: this.noIncludeSocialSecurity, shouldBeSelected: true, elementName: 'socialSecurityBenefits' }
+            ]);
+            logger.info('All fields are cleared');
+        } catch (error) {
+            logger.error("Error validating form cleared:", error);
+            throw error;
+
+        }
     }
 }
 export default new calculatePage();

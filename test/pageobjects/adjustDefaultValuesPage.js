@@ -1,5 +1,5 @@
-import { browser } from '@wdio/globals'
-import xlsx from 'xlsx';
+import utils from '../utils/utils';
+import logger from '../utils/logger';
 
 class adjustDefaultValuesPage {
 
@@ -15,36 +15,31 @@ class adjustDefaultValuesPage {
     get postRetirementReturn() { return $('//*[@id="post-retirement-roi"]') };
     get saveChangesButton() { return $('//*[@onclick="savePersonalizedValues();"]') };
 
-    getTestData(testCaseName, sheetName) {
-        const workbook = xlsx.readFile('./test/data/testData.xlsx');
-        if (!workbook.Sheets[sheetName]) {
-            throw new Error(`Sheet "${sheetName}" not found in the Excel file.`);
-        }
-        const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-        const testData = sheetData.find(row => row.testCaseName === testCaseName);
 
-        return testData;
-    }
-
+    /* Adjusting the default values */
     async fillDefaultValuesDetails(testCaseName, sheetName) {
-        await this.adjustDefaultValuesLink.click();
-        await this.defaultValuesModal.waitForDisplayed({ timeout: 10000 });
-        const testData = this.getTestData(testCaseName, sheetName);
-        await this.additionalIncome.click();
-        await this.additionalIncome.setValue(testData.additionalIncome);
-        await this.retirementDuration.setValue(testData.retirementDuration);
-        if (testData.excludeInflation === 'yes' && testData.includeInflation === 'no') {
-            await this.excludeInflation.click();
-        }
-        else {
-            await this.includeInflation.click();
-            await this.expectedInflationRate.setValue(testData.expectedInflationRate);
+        try {
+            await utils.elementAction(this.adjustDefaultValuesLink, 'click', null, 'Adjust default values link');
+            await this.defaultValuesModal.waitForDisplayed({ timeout: 10000 });
+            const testData = await utils.getTestData(testCaseName, sheetName);
+            await utils.elementAction(this.additionalIncome, 'setValue', testData.additionalIncome, 'Additional Income');
+            await utils.elementAction(this.retirementDuration, 'setValue', testData.retirementDuration, 'Retirement Duration');
+            if (testData.excludeInflation === 'yes' && testData.includeInflation === 'no') {
+                await utils.elementAction(this.excludeInflation, 'click', null, 'Exclude Inflation');
+            }
+            else {
+                await utils.elementAction(this.includeInflation, 'click', null, 'Include Inflation');
+                await utils.elementAction(this.expectedInflationRate, 'setValue', testData.expectedInflationRate, 'Expected Inflation Rate');
+            }
+            await utils.elementAction(this.retirementAnnualIncome, 'setValue', testData.retirementAnnualIncome, 'Retirement Annual Income');
+            await utils.elementAction(this.preRetirementReturn, 'setValue', testData.preRetirementReturn, 'Pre Retirement Return');
+            await utils.elementAction(this.postRetirementReturn, 'setValue', testData.postRetirementReturn, 'Post Retirement Return');
+            await this.saveChangesButton.click();
+        } catch (error) {
+            logger.error(`Error filling the default values: ${error}`);
+            throw error;
         }
 
-        await this.retirementAnnualIncome.setValue(testData.retirementAnnualIncome);
-        await this.preRetirementReturn.setValue(testData.preRetirementReturn);
-        await this.postRetirementReturn.setValue(testData.postRetirementReturn);
-        await this.saveChangesButton.click();
     }
 
 

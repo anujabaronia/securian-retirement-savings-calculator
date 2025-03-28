@@ -7,16 +7,8 @@ Given(/^navigate to the calculator page$/, async () => {
     await Page.launch();
 });
 
-Given(/^fill the age details with ([^"]*) ([^"]*)$/, async function (testCaseName, sheetName) {        
-    await Calculate.fillAgeDetails(testCaseName, sheetName);
-});
-
-Given(/^fill income-savings details ([^"]*) ([^"]*)$/, async function (testCaseName, sheetName) {
-    await Calculate.fillIncomeDetails(testCaseName, sheetName);
-});
-
-Given(/^select inclusion of social security income benefits ([^"]*) ([^"]*)$/, async function (testCaseName, sheetName) {
-    await Calculate.fillSocialSecurityDetails(testCaseName, sheetName);
+Given(/^fill the required details for ([^"]*) ([^"]*)$/, async function (testCaseName, sheetName) {        
+    await Calculate.fillRequiredDetails(testCaseName, sheetName);
 });
 
 Given(/^adjust the default values ([^"]*) ([^"]*)$/, async function (testCaseName, sheetName) {
@@ -42,6 +34,10 @@ Then(/^I should see the retirement savings details$/, async () => {
 
 Then(/^validate the error messages for ([^"]*) ([^"]*)$/, async (testCaseName, sheetName) => {     
     await Calculate.validateErrorMessages(testCaseName, sheetName);
+});
+
+Then(/^validate the Social Security details for ([^"]*) ([^"]*)$/, async (testCaseName, sheetName) => {
+    await Calculate.validateSocialSecurityDetails(testCaseName, sheetName);
 });
 
 Then(/^validate the form is cleared$/, async () => {
