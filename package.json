@@ -8,6 +8,7 @@
     "@wdio/spec-reporter": "^9.11.0"
   },
   "dependencies": {
+    "winston": "^3.17.0",
     "xlsx": "^0.18.5"
   }
 }
