@@ -30,29 +30,5 @@ class launchPage {
             throw error;
         }
     }
-
-    /* Validate the home page heading and info banner */
-    // async validateHomePageDetails(details) {
-    //     try {
-    //         // const data = utils.fetchDataFromJson('./test/testData/testData-heading.json', details[0]);
-    //         const searchValues = details[1].split(',');
-    //         if (searchValues.includes('heading')) {
-    //             logger.info(`Expected heading: ${data.heading}`);
-    //             await utils.assertElementsHaveValues([
-    //                 { element: this.heading, expectedValue: data.heading, elementName: 'heading' }
-    //             ]);
-    //         }
-    //         if (searchValues.includes('infoBanner')) {
-    //             logger.info(`Expected infoBanner: ${data.infoBanner}`);
-    //             await utils.assertElementsHaveValues([
-    //                 { element: this.infoBanner, expectedValue: data.infoBanner, elementName: 'infoBanner' }
-    //             ]);
-    //         }
-    //     } catch (error) {
-    //         logger.error(`Error validating the home page details: ${error}`);
-    //         throw error;
-    //     }
-
-    // }
 }
 export default new launchPage();
