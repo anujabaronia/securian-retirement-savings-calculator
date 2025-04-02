@@ -1,6 +1,11 @@
 {
   "name": "retirement-savings-calculator",
+  "description": "This is testing project for calculating savings for retirement",
+  "author": "Anuja Gupta",
   "type": "module",
+  "scripts": {
+    "test": "wdio wdio.conf.js"
+  },
   "devDependencies": {
     "@wdio/cli": "^9.12.0",
     "@wdio/cucumber-framework": "^9.11.0",
@@ -8,7 +13,6 @@
     "@wdio/spec-reporter": "^9.11.0"
   },
   "dependencies": {
-    "winston": "^3.17.0",
-    "xlsx": "^0.18.5"
+    "winston": "^3.17.0"
   }
 }
