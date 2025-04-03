@@ -257,29 +257,5 @@ class calculatePage {
             throw error;
         }
     }
-
-    /* Validate the form is cleared */
-    async validateFormCleared() {
-        try {
-            await browser.pause(5000);
-            await utils.assertElementsHaveValues([
-                { element: this.currentAge, expectedValue: '', elementName: 'currentAge' },
-                { element: this.retirementAge, expectedValue: '', elementName: 'retirementAge' },
-                { element: this.annualIncome, expectedValue: '', elementName: 'annualIncome' },
-                { element: this.spouseIncome, expectedValue: '', elementName: 'spouseIncome' },
-                { element: this.currentTotalSavings, expectedValue: '', elementName: 'currentTotalSavings' },
-                { element: this.currentAnnualSavings, expectedValue: '', elementName: 'currentAnnualSavings' },
-                { element: this.savingsIncreaseRate, expectedValue: '', elementName: 'savingsIncreaseRate' },
-            ]);
-            await utils.assertElementsAreSelected([
-                { element: this.noIncludeSocialSecurity, shouldBeSelected: true, elementName: 'socialSecurityBenefits' }
-            ]);
-            logger.info('All fields are cleared');
-        } catch (error) {
-            logger.error("Error validating form cleared:", error);
-            throw error;
-
-        }
-    }
 }
 export default new calculatePage();

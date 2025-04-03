@@ -1,4 +1,4 @@
-Feature: Claculating retirement savings using securian pre-retirement calculator
+Feature: Calculating retirement savings using securian pre-retirement calculator
 
     Background: Launch page
         Given user navigates to the retirement calculator page
